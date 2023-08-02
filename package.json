@@ -4,6 +4,7 @@
     "dependencies": {
         "@pulumi/command": "^0.8.0",
         "@pulumi/digitalocean": "^4.21.0",
-        "@pulumi/pulumi": "^3.0.0"
+        "@pulumi/pulumi": "^3.0.0",
+        "bluebird": "^3.7.2"
     }
 }
