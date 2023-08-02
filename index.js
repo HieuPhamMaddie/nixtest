@@ -45,7 +45,7 @@ const createServer = (servername , servertag) => {
     size: "s-1vcpu-1gb",
     sshKeys: [sshKey.then(key => key.id)],
     tags: [servertag],
-    userData: initConfigServer("monitor"),
+    userData: initConfigServer(servertag),
   })
 }
 
