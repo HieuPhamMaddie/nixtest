@@ -38,13 +38,13 @@ const sshKey = digitalocean.getSshKey({
         name: "hieuphamssh",
 });
 
-const createServer = (servername , servertag) => {
+const createServer = (servername , servertag ) => {
   return new digitalocean.Droplet(servername , {
     image: "137610103",
     region: "sgp1",
     size: "s-1vcpu-1gb",
     sshKeys: [sshKey.then(key => key.id)],
-    tags: [servertag],
+    tags: ["monitoring"],
     userData: initConfigServer(servertag),
   })
 }
