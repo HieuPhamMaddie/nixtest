@@ -13,7 +13,7 @@ scrape_configs:
 
     digitalocean_sd_configs:
       - authorization:
-          credentials: "DOKEY"
+          credentials: dokey
     relabel_configs:
       # Only scrape targets that have a tag 'monitoring'.
       - source_labels: [__meta_digitalocean_tags]
@@ -29,7 +29,7 @@ scrape_configs:
 
     digitalocean_sd_configs:
       - authorization:
-          credentials: "DOKEY"
+          credentials: dokey
     relabel_configs:
       # Only scrape targets that have a tag 'monitoring'.
       - source_labels: [__meta_digitalocean_tags]

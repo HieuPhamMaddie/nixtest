@@ -1,82 +1,46 @@
 "use strict";
-const pulumi = require("@pulumi/pulumi");
-const digitalocean = require("@pulumi/digitalocean");
 const command = require("@pulumi/command");
 var Promise = require("bluebird");
-const fs = require("fs");
+const {getPriKey , createServer} = require('./utils/utils.js');
 
-
-const getPriKey = () => {
-  const key = fs.readFileSync("./sshkeys/priv", "utf8");
-  return key.toString();
-};
-
-const initConfigServer = (type) => {
-  const nixConfig = fs.readFileSync('configuration.nix').toString();
-  let script = `#!/usr/bin/env sh
-  echo "${nixConfig}" > /etc/nixos/configuration.nix
-  `
-  if(type == "monitor"){
-    let monitorDockerCompose = fs.readFileSync('docker/monitor_server/docker-compose.yml').toString();
-    let prometheusYml = fs.readFileSync('docker/monitor_server/prometheus.yml').toString();
-    script = `${script}
-    mkdir /root/app/
-    echo "${monitorDockerCompose}" > /root/app/docker-compose.yml
-    echo "${prometheusYml}" > /root/app/prometheus.yml
-   `
-  }else {
-    let monitoringDockerCompose = fs.readFileSync('docker/app_server/docker-compose.yml').toString();
-    script = `${script}
-    mkdir /root/app/
-    echo "${monitoringDockerCompose}" > /root/app/docker-compose.yml
-   `
-  }
-  return script;
-};
-
-const sshKey = digitalocean.getSshKey({
-        name: "hieuphamssh",
-});
-
-const createServer = (servername , servertag ) => {
-  return new digitalocean.Droplet(servername , {
-    image: "137610103",
-    region: "sgp1",
-    size: "s-1vcpu-1gb",
-    sshKeys: [sshKey.then(key => key.id)],
-    tags: ["monitoring"],
-    userData: initConfigServer(servertag),
-  })
-}
-
+const dropletAppCount = 2;
 const droplets = [];
-const grafana_server =createServer("grafana","monitor");
-const app_server = createServer("app","monitoring");
 
+//create the monitor server
+const grafana_server =createServer("grafana","monitor");
 droplets.push(grafana_server);
-droplets.push(app_server);
+
+//create app server
+for(let i = 0 ; i < dropletAppCount ; i++){
+  const appName = "App-" + i;
+  const app_server = createServer(appName,"monitoring");
+  droplets.push(app_server);
+};
 
 
 const rebuild = async () => {
   await Promise.mapSeries(droplets ,async droplet => {
-  const connection = {
-    host: droplet.ipv4Address,
-    user: "root",
-    privateKey: getPriKey()
-  };
-  const commandName = Date.now().toString();
-  new command.remote.Command(commandName, {
-    connection: connection,
-    create: "nixos-rebuild switch; cd /root/app; docker-compose up -d",
-  });
-
+  droplet.ipv4Address.apply(ipv4 => {
+    const connection = {
+      host: ipv4,
+      user: "root",
+      dialErrorLimit : -1,
+      privateKey: getPriKey()
+    };
+    new command.remote.Command(ipv4, {
+      connection: connection,
+      create: "nixos-rebuild switch; cd /root/app; docker-compose up -d",
+    });
+    
+  }); 
   });
 }
 
 
 rebuild();
 exports.grafana_ip = grafana_server.ipv4Address;
-exports.app_ip = app_server.ipv4Address;
+
+
 
 
 

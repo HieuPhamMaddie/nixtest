@@ -17,6 +17,7 @@
       9090  # prometheus
       9100  # node_exporter
       8080  # cadvisor
+      80
     ];
     useDHCP = true;
     };
